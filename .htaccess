@@ -1,5 +1,5 @@
-Options +FollowSymLinks
-Options -Indexes
+Options All -ExecCGI -Indexes -Includes +FollowSymLinks
+
 DirectoryIndex index.php
 
 RewriteEngine On
@@ -15,7 +15,7 @@ RewriteBase /
 <IfModule mod_gzip.c>
     mod_gzip_on         Yes
     mod_gzip_dechunk    Yes
-    mod_gzip_item_include file  	\.(html?|txt|css|js|php|pl)$
+    mod_gzip_item_include file      \.(html?|txt|css|js|php|pl)$
     mod_gzip_item_include mime		^text\.*
     mod_gzip_item_include mime		^application/x-javascript.*
     mod_gzip_item_exclude mime		^image\.*
@@ -28,21 +28,27 @@ RewriteBase /
 RewriteCond %{HTTP_HOST} ^www.site.com$
 RewriteRule $ http://site.com%{REQUEST_URI} [R=301,L]
 
+# =====================================================================
+# Редирект поддоменов в директории
+# =====================================================================
+#
+# Не даём обратится прямо в директорию поддоменов
 
-# Динамические поддомены Версия 1
-#
-# Тут запросы адресуются напрямую к файловой системе поддомена
-# RewriteCond %{THE_REQUEST} /subdmn/[^/]
-# RewriteRule ^subdmn/[^/]+/(.*) /$1 [R=permanent,L]
-# RewriteCond %{HTTP_HOST} ^(.+)\.site\.com$ [NC]
-# RewriteCond %{REQUEST_URI} !^/subdmn
-# RewriteRule ^(.*)$ /subdmn/%1%{REQUEST_URI} [L]
-  
-# Динамические поддомены Версия 2
-#
-# Тут запросы адресуются к index.php поддомена
-# RewriteCond %{THE_REQUEST} /subdmn/[^/]
-# RewriteRule ^subdmn/[^/]+/(.*) /$1 [R=permanent,L]
-# RewriteCond %{HTTP_HOST} ^(.+)\.site\.com$ [NC]
-# RewriteCond %{REQUEST_URI} !^/subdmn
-# RewriteRule (.*) /subdmn/%1/index.php?$1 [L]
+ RewriteCond %{THE_REQUEST} /subdmn/[^/]
+ RewriteRule ^subdmn/[^/]+/(.*) /$1 [R=permanent,L]
+
+# Если запрос начинается с названия папки закачки и кончается точкой
+# с расширением из списка внизу, то редиректим запрос прямо в файловую
+# систему в папку субдомена
+
+ RewriteCond %{REQUEST_URI} /uploads/.*\.(css|jpg|gif|png|zip|rar|doc|xls|js|tif|tiff|docx|xlsx|ico)$
+ RewriteCond %{HTTP_HOST} ^(.+)\.site\.com$ [NC]
+ RewriteCond %{REQUEST_URI} !^/subdmn
+ RewriteRule ^(.*)$ /subdmn/%1%{REQUEST_URI} [L]
+
+# Иначе запрос переадресуем index.php для дальнейшего роутинга
+
+ RewriteCond %{HTTP_HOST} ^(.+)\.site\.com$ [NC]
+ RewriteCond %{REQUEST_URI} !^/subdmn
+ RewriteRule (.*) /subdmn/%1/index.php?$1 [L]
+
